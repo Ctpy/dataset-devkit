@@ -15,13 +15,32 @@ class Dataset(ABC):
         self.label_files: list[Path] = []
         self._frame_loaded: bool = False
         self._loaded_point_cloud: Union[np.ndarray, None] = None
-        self._loaded_labels: Union[np.ndarray, None] = None
+        self._loaded_labels: list[PointCloudObject] = []
 
     def _set_loaded(self, is_loaded: bool) -> None:
+        """
+        Set status if the dataset object has loaded a frame
+        :param is_loaded: (bool) dataset load frame
+        :return: None
+        """
         assert self._loaded_labels or self._loaded_point_cloud
         self._frame_loaded = is_loaded
 
+    def _set_point_cloud(self, point_cloud: np.ndarray) -> bool:
+        # TODO: Add checks
+        self._loaded_point_cloud = point_cloud
+        return True
+
+    def _set_labels(self, labels: list[PointCloudObject]) -> bool:
+        # TODO: Add checks
+        self._loaded_labels = labels
+        return True
+
     def clear_frame(self) -> None:
+        """
+        Clears dataset from previously loaded frame and labels
+        :return: None
+        """
         self._frame_loaded = False
         self._loaded_point_cloud = None
         self._loaded_labels = None
@@ -35,27 +54,28 @@ class Dataset(ABC):
         """
         pass
 
-    @abstractmethod
     def get_objects(self) -> list[PointCloudObject]:
         """
         Extract the labels
         :return: PointCloudObject
         """
-        pass
+        assert self._frame_loaded, "Load frame before accessing PointCloudLabel objects"
+        return self._loaded_labels
 
-    @abstractmethod
     def crop_object(self, index: int) -> PointCloudObject:
-        pass
+        """
+        Crops the point cloud to the bounding box
+        :param index: (int) Index of the label object in loaded label list
+        :return: (PointCloudObject)
+        """
+        self._loaded_labels[index].crop(self._loaded_point_cloud)
+        return self._loaded_labels[index]
 
-    @abstractmethod
     def crop_objects(self) -> list[PointCloudObject]:
-        pass
-
-    def _rotate(self, rotation_matrix: np.ndarray) -> None:
-        pass
-
-    def _translate(self, translation_matrix: np.ndarray) -> None:
-        pass
-
-    def _normalize(self) -> None:
-        pass
+        """
+        Crops point cloud to all bounding boxes in loaded label list
+        :return: (List[PointCloudObject])
+        """
+        for label in self._loaded_labels:
+            label.crop(self._loaded_point_cloud)
+        return self._loaded_labels
