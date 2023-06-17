@@ -1,37 +1,52 @@
 from abc import ABC, abstractmethod
 from pathlib import Path
-from point_cloud_object import PointCloudObject
+from dataset.point_cloud_object import PointCloudObject
 from typing import Union
 import numpy as np
 
 
 class Dataset(ABC):
 
-    def __init__(self, dataset_path: str) -> None:
+    def __init__(self, dataset_path: str, num_classes) -> None:
         self._dataset_path: Path = Path(dataset_path)
+        self.label_colors: Union[list, None] = None
         self.point_cloud_path: Union[Path, None] = None
         self.label_path: Union[Path, None] = None
         self.point_cloud_files: list[Path] = []
         self.label_files: list[Path] = []
+        self.num_classes: int = num_classes
+        self.label_map: Union[dict, list, None] = None
         self._frame_loaded: bool = False
+        self.__cropped: bool = False
         self._loaded_point_cloud: Union[np.ndarray, None] = None
         self._loaded_labels: list[PointCloudObject] = []
 
-    def _set_loaded(self, is_loaded: bool) -> None:
+    def label_mapping(self, label: Union[int, str]) -> int:
+        if isinstance(label, int) and isinstance(self.label_map, list):
+            return label
+        elif isinstance(label, str) and isinstance(self.label_map, dict):
+            return self.label_map[label]
+        else:
+            raise ValueError
+
+    def set_loaded(self, is_loaded: bool) -> None:
         """
         Set status if the dataset object has loaded a frame
         :param is_loaded: (bool) dataset load frame
         :return: None
         """
-        assert self._loaded_labels or self._loaded_point_cloud
+        assert self._loaded_labels is not None or self._loaded_point_cloud is not None
         self._frame_loaded = is_loaded
 
-    def _set_point_cloud(self, point_cloud: np.ndarray) -> bool:
+    def get_frame_loaded(self) -> bool:
+        return self._frame_loaded
+
+    def set_point_cloud(self, point_cloud: np.ndarray) -> bool:
         # TODO: Add checks
         self._loaded_point_cloud = point_cloud
         return True
 
-    def _set_labels(self, labels: list[PointCloudObject]) -> bool:
+    def set_labels(self, labels: list[PointCloudObject]) -> bool:
         # TODO: Add checks
         self._loaded_labels = labels
         return True
@@ -44,6 +59,7 @@ class Dataset(ABC):
         self._frame_loaded = False
         self._loaded_point_cloud = None
         self._loaded_labels = None
+        self.__cropped = False
 
     @abstractmethod
     def load_frame(self, index: [int, Path]) -> np.ndarray:
@@ -76,6 +92,16 @@ class Dataset(ABC):
         Crops point cloud to all bounding boxes in loaded label list
         :return: (List[PointCloudObject])
         """
-        for label in self._loaded_labels:
-            label.crop(self._loaded_point_cloud)
+        if not self.__cropped:
+            self.__cropped = True
+            for label in self._loaded_labels:
+                label.crop(self._loaded_point_cloud)
         return self._loaded_labels
+
+    def get_point_cloud(self) -> np.ndarray:
+        """
+        Returns the loaded point cloud
+        :return: (np.ndarray)
+        """
+        assert self._frame_loaded, "Load a frame first"
+        return self._loaded_point_cloud

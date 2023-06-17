@@ -1,6 +1,6 @@
 import numpy as np
 import open3d as o3d
-from label.label_object import LabelObject
+from dataset.label.label_object import LabelObject
 from typing import Union
 
 
@@ -11,7 +11,7 @@ class PointCloudObject:
         self.__label: LabelObject = label_object
 
     def crop(self, points: np.ndarray) -> None:
-        points_vector = o3d.utility.Vector3dVector(points)
+        points_vector = o3d.utility.Vector3dVector(points[:, :3])
         point_indices = self.__label.get_bounding_box().get_point_indices_within_bounding_box(points_vector)
         self.__points = points[point_indices]
 
@@ -38,3 +38,6 @@ class PointCloudObject:
 
     def get_label(self) -> str:
         return self.__label.get_label()
+
+    def __repr__(self):
+        return self.__label.__repr__()

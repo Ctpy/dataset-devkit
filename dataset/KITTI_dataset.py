@@ -1,8 +1,8 @@
 from pathlib import Path
 import numpy as np
-from point_cloud_object import PointCloudObject
+from dataset.point_cloud_object import PointCloudObject
 from dataset import Dataset
-from label.label_object import LabelObject
+from dataset.label.label_object import LabelObject
 from typing import Union
 
 
@@ -13,7 +13,7 @@ class KITTIDataset(Dataset):
         KITTI dataset object
         :param dataset_path (str): Path to dataset folder structure
         """
-        super().__init__(dataset_path)
+        super().__init__(dataset_path, 7)
         self.set = 'training'
         self.point_cloud_path = self._dataset_path / self.set / 'velodyne'
         self.label_path = self._dataset_path / self.set / 'label_2'
@@ -22,12 +22,23 @@ class KITTIDataset(Dataset):
         self.point_cloud_files.extend(self.point_cloud_path.glob('*.bin'))
         self.calib_files.extend(self.calib_path.glob('*.txt'))
         self.label_files.extend(self.label_path.glob('*.txt'))
+        self.label_map = {'Car': 0, ' Van': 1, 'Truck': 2, 'Pedestrian': 3, 'Person_sitting': 4, 'Cyclist': 5,
+                          'Tram': 6}
+        self.label_colors = [
+            [1, 0, 0],  # Red
+            [0, 1, 0],  # Green
+            [0, 0, 1],  # Blue
+            [1, 1, 0],  # Yellow
+            [1, 0, 1],  # Magenta
+            [0, 1, 1],  # Cyan
+            [0.5, 0.5, 0]  # Olive
+        ]
 
-    def load_frame(self, index: Union[int, Path]) -> np.ndarray:
+    def load_frame(self, index: Union[int, Path]) -> None:
         """
         Loads a frame from the given file where the dimension in KITTI is 4 [x, y, z, intensity]
         :param: index (Union[int, Path]) to point_cloud_file list or path to point cloud file
-        :return: point cloud (np.ndarray)
+        :return: None
         """
 
         if isinstance(index, int):
@@ -47,6 +58,7 @@ class KITTIDataset(Dataset):
             point_cloud = np.frombuffer(data, dtype=np.float32).reshape((-1, 4))
         label_object_list = self.__read_label_file(label_file)
         rotation_matrix, transform_matrix = self.__read_calib_files(calib_file)
+
         rotation_matrix = np.linalg.inv(rotation_matrix)
         transform_matrix = np.linalg.inv(transform_matrix)
 
@@ -61,7 +73,9 @@ class KITTIDataset(Dataset):
             point_cloud_object_list.append(PointCloudObject(label_object))
 
         # Set all data
-        return point_cloud
+        self.set_loaded(True)
+        self.set_point_cloud(point_cloud)
+        self.set_labels(point_cloud_object_list)
 
     @staticmethod
     def __read_label_file(file_path: Path) -> list[LabelObject]:
@@ -73,12 +87,14 @@ class KITTIDataset(Dataset):
         for line in data.split('\n')[:-1]:
             properties = line.split(' ')
 
-            if properties[0] == 'DontCare':
+            if properties[0] in ['DontCare', 'Misc']:
                 continue
 
             label_class = properties[0]
             height, width, length, pos_x, pos_y, pos_z, rotation = tuple(prop for prop in properties[8:15])
-            label_object_list.append(LabelObject(pos_x, pos_y, pos_z, length, width, height, rotation, label_class))
+            label_object_list.append(
+                LabelObject(float(pos_x), float(pos_y) - float(height) / 2, float(pos_z), float(length), float(height),
+                            float(width), float(rotation), label_class))
 
         return label_object_list
 
@@ -99,10 +115,9 @@ class KITTIDataset(Dataset):
         if rotation_matrix is None or transform_matrix is None:
             raise ValueError("Rotation or translation matrix are not found in file %s", file_path.resolve())
 
-        return rotation_matrix, transform_matrix
+        return rotation_matrix, np.append(transform_matrix, np.array([[0, 0, 0, 1]]), axis=0)
 
 
 if __name__ == '__main__':
     kitti = KITTIDataset("D:\\Datasets\\KITTI")
-    print(kitti.load_frame(1).shape)
-
+    kitti.load_frame(1)
