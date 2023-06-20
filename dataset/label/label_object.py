@@ -1,7 +1,7 @@
 from abc import ABC
 import numpy as np
 import open3d.geometry as o3d
-from utils.math_utils import rotation_z, get_transformation_matrix
+from utils.math_utils import *
 
 
 class LabelObject(ABC):
@@ -11,7 +11,7 @@ class LabelObject(ABC):
         self._rotation_z: float = rotation
         self._label: str = label
         self._bbox: o3d.OrientedBoundingBox = o3d.OrientedBoundingBox(np.array([pos_x, pos_y, pos_z]),
-                                                                      rotation_z(rotation),
+                                                                      rotation_y(rotation),
                                                                       np.array([length, width, height]))
 
     def transform(self, transformation_matrix: np.ndarray) -> None:
@@ -23,10 +23,13 @@ class LabelObject(ABC):
     def rotate(self, rotation_matrix: np.ndarray, center=(0, 0, 0)) -> None:
         self._bbox.rotate(rotation_matrix, center=center)
 
-    def get_bounding_box(self):
+    def get_bounding_box(self) -> o3d.OrientedBoundingBox:
         return self._bbox
 
-    def get_label(self):
+    def get_rotation(self) -> float:
+        return self._rotation_z
+
+    def get_label(self) -> str:
         return self._label
 
     def __str__(self):

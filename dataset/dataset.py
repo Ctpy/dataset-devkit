@@ -21,6 +21,9 @@ class Dataset(ABC):
         self._loaded_point_cloud: Union[np.ndarray, None] = None
         self._loaded_labels: list[PointCloudObject] = []
 
+    def __len__(self) -> int:
+        return len(self.point_cloud_files)
+
     def label_mapping(self, label: Union[int, str]) -> int:
         if isinstance(label, int) and isinstance(self.label_map, list):
             return label
@@ -76,6 +79,9 @@ class Dataset(ABC):
         :return: PointCloudObject
         """
         assert self._frame_loaded, "Load frame before accessing PointCloudLabel objects"
+
+        if not self.__cropped:
+            self.crop_objects()
         return self._loaded_labels
 
     def crop_object(self, index: int) -> PointCloudObject:
@@ -90,7 +96,7 @@ class Dataset(ABC):
     def crop_objects(self) -> list[PointCloudObject]:
         """
         Crops point cloud to all bounding boxes in loaded label list
-        :return: (List[PointCloudObject])
+        :return: (list[PointCloudObject])
         """
         if not self.__cropped:
             self.__cropped = True

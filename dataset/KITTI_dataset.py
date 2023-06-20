@@ -1,3 +1,4 @@
+import numpy
 from pathlib import Path
 import numpy as np
 from dataset.point_cloud_object import PointCloudObject
@@ -22,6 +23,11 @@ class KITTIDataset(Dataset):
         self.point_cloud_files.extend(self.point_cloud_path.glob('*.bin'))
         self.calib_files.extend(self.calib_path.glob('*.txt'))
         self.label_files.extend(self.label_path.glob('*.txt'))
+
+        assert len(self.point_cloud_files) == len(
+            self.label_files), f"Size mismatch between point cloud files " \
+                               f"{len(self.point_cloud_files)} and labels {len(self.label_files)}"
+
         self.label_map = {'Car': 0, ' Van': 1, 'Truck': 2, 'Pedestrian': 3, 'Person_sitting': 4, 'Cyclist': 5,
                           'Tram': 6}
         self.label_colors = [
@@ -41,7 +47,7 @@ class KITTIDataset(Dataset):
         :return: None
         """
 
-        if isinstance(index, int):
+        if isinstance(index,  int):
             point_cloud_file: Path = self.point_cloud_files[index]
             label_file: Path = self.label_files[index]
             calib_file: Path = self.calib_files[index]
@@ -50,7 +56,7 @@ class KITTIDataset(Dataset):
             label_file: Path = Path(index.replace('velodyne', 'label_2').replace('bin', 'txt'))
             calib_file: Path = Path(index.replace('velodyne', 'calib').replace('bin', 'txt'))
         else:
-            raise TypeError("Expected int or str got %s", type(index))
+            raise TypeError("Expected int or str got %s", str(type(index)))
 
         with open(point_cloud_file.resolve(), 'rb') as f:
             data = f.read()
@@ -116,8 +122,3 @@ class KITTIDataset(Dataset):
             raise ValueError("Rotation or translation matrix are not found in file %s", file_path.resolve())
 
         return rotation_matrix, np.append(transform_matrix, np.array([[0, 0, 0, 1]]), axis=0)
-
-
-if __name__ == '__main__':
-    kitti = KITTIDataset("D:\\Datasets\\KITTI")
-    kitti.load_frame(1)

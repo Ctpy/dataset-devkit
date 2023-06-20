@@ -1,5 +1,3 @@
-import numpy as np
-
 from dataset.dataset import Dataset
 from dataset.KITTI_dataset import KITTIDataset
 import open3d as o3d
@@ -24,7 +22,7 @@ class DatasetVisualizer:
             geometries.append(label.get_bounding_box())
         o3d.visualization.draw_geometries(geometries)
 
-    def visualize_objects(self) -> None:
+    def visualize_objects(self, coord=False) -> None:
         """
         Visualizes every object of the loaded point cloud frame
         :return: None
@@ -36,8 +34,13 @@ class DatasetVisualizer:
             point_cloud = o3d.geometry.PointCloud()
             point_cloud.points = o3d.utility.Vector3dVector(point_cloud_object.get_points()[:, :3])
             bounding_box = point_cloud_object.get_bounding_box()
-            bounding_box.color = self.dataset.label_colors[self.dataset.label_mapping(point_cloud_object.get_label())]
-            o3d.visualization.draw_geometries([point_cloud, bounding_box])
+            bounding_box.color = self.dataset.label_colors[
+                self.dataset.label_mapping(point_cloud_object.get_label_object().get_label())]
+            geometries = [point_cloud, bounding_box]
+            if coord:
+                coord_axes = o3d.geometry.TriangleMesh.create_coordinate_frame()
+                geometries.append(coord_axes)
+            o3d.visualization.draw_geometries(geometries)
 
 
 if __name__ == '__main__':
@@ -45,4 +48,10 @@ if __name__ == '__main__':
     kitti.load_frame(3)
     print(kitti.get_objects())
     dataset_visualizer = DatasetVisualizer(kitti)
-    dataset_visualizer.visualize_objects()
+    #dataset_visualizer.visualize_objects(coord=True)
+    kitti.get_objects()[0].normalize()
+    rotation = kitti.get_objects()[0].get_label_object().get_rotation()
+    print(rotation)
+    dataset_visualizer.visualize_objects(coord=True)
+    kitti.get_objects()[0].rotate(rotation, dim=2)
+    dataset_visualizer.visualize_objects(coord=True)
