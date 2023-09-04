@@ -9,7 +9,7 @@ import argparse
 import os
 import json
 import numpy as np
-
+import open3d as o3d
 
 class DatasetCreator:
 
@@ -40,7 +40,7 @@ class DatasetCreator:
     def create_dataset(self) -> None:
         bins = np.array_split(range(len(self.dataset)), self.num_workers)
         for idx in range(self.num_workers):
-            thread = threading.Thread(target=self.convert, args=(idx, bins[idx], ))
+            thread = threading.Thread(target=self.convert, args=(idx, bins[idx],))
             thread.start()
 
     def convert(self, thread_id: int, bin: np.ndarray) -> None:
@@ -65,9 +65,12 @@ class DatasetCreator:
             }
             json.dump(label, f)
             f.close()
-
-        np.save(str(self.output_path / 'point_clouds' / (filename + '.npy')), point_cloud_object.get_points())
-
+        # np.save(str(self.output_path / 'point_clouds' / (filename + '.bin')), point_cloud_object.get_points())
+        # point_cloud_object.get_points().tofile(str(self.output_path / 'point_clouds' / (filename + '.bin')))
+        pcd = o3d.geometry.PointCloud()
+        points = point_cloud_object.get_points()
+        pcd.points = o3d.utility.Vector3dVector(points[:, :3])
+        o3d.io.write_point_cloud(str(self.output_path / 'point_clouds' / (filename + '.pcd')), pcd)
 
 def parse_arguments() -> tuple[str, str, str, int]:
     parser = argparse.ArgumentParser("Parsing arguments to init DatasetCreator")

@@ -8,3 +8,4 @@ torch-cluster
 torch-spline-conv
 torch-geometric
 pytorch-lightning
+scipy

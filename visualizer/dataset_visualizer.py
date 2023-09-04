@@ -8,7 +8,7 @@ class DatasetVisualizer:
     def __init__(self, dataset: Dataset):
         self.dataset: Dataset = dataset
 
-    def visualize(self) -> None:
+    def visualize(self, with_label=True) -> None:
         """
         Visualizes the whole point cloud frame with all labelled objects
         :return: None
@@ -17,9 +17,10 @@ class DatasetVisualizer:
         point_cloud.points = o3d.utility.Vector3dVector(self.dataset.get_point_cloud()[:, :3])
         label_objects = self.dataset.get_objects()
         geometries = [point_cloud]
-        for label in label_objects:
-            label.get_bounding_box().color = self.dataset.label_colors[self.dataset.label_mapping(label.get_label())]
-            geometries.append(label.get_bounding_box())
+        if with_label:
+            for label in label_objects:
+                label.get_bounding_box().color = self.dataset.label_colors[self.dataset.label_mapping(label.get_label_object().get_label())]
+                geometries.append(label.get_bounding_box())
         o3d.visualization.draw_geometries(geometries)
 
     def visualize_objects(self, coord=False) -> None:
@@ -45,13 +46,10 @@ class DatasetVisualizer:
 
 if __name__ == '__main__':
     kitti = KITTIDataset("D:\\Datasets\\KITTI")
-    kitti.load_frame(3)
+    kitti.load_frame(2)
     print(kitti.get_objects())
     dataset_visualizer = DatasetVisualizer(kitti)
-    #dataset_visualizer.visualize_objects(coord=True)
-    kitti.get_objects()[0].normalize()
-    rotation = kitti.get_objects()[0].get_label_object().get_rotation()
-    print(rotation)
-    dataset_visualizer.visualize_objects(coord=True)
-    kitti.get_objects()[0].rotate(rotation, dim=2)
-    dataset_visualizer.visualize_objects(coord=True)
+    # kitti.get_objects()[0].normalize()
+    # rotation = kitti.get_objects()[0].get_label_object().get_rotation()
+    # kitti.get_objects()[0].rotate(rotation, dim=2)
+    dataset_visualizer.visualize(with_label=False)
