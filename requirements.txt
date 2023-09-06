@@ -1,11 +1,5 @@
 open3d~=0.17.0
 numpy~=1.24.3
 tqdm
-torch
-torch-scatter
-torch-sparse
-torch-cluster
-torch-spline-conv
-torch-geometric
 pytorch-lightning
 scipy

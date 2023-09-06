@@ -4,9 +4,9 @@ from dataset.point_cloud_object import PointCloudObject
 from dataset import Dataset
 from dataset.label.label_object import LabelObject
 from typing import Union
+from utils.math_utils import *
 
-
-class KITTIDataset(Dataset):
+class WaymoDataset(Dataset):
 
     def __init__(self, dataset_path: str):
         """
@@ -16,27 +16,23 @@ class KITTIDataset(Dataset):
         super().__init__(dataset_path, 7)
         self.set = 'training'
         self.point_cloud_path = self._dataset_path / self.set / 'velodyne'
-        self.label_path = self._dataset_path / self.set / 'label_2'
+        self.label_path = self._dataset_path / self.set / 'label_all'
         self.calib_path = self._dataset_path / self.set / 'calib'
         self.calib_files: list[Path] = []
         self.point_cloud_files.extend(self.point_cloud_path.glob('*.bin'))
         self.calib_files.extend(self.calib_path.glob('*.txt'))
         self.label_files.extend(self.label_path.glob('*.txt'))
 
-        assert len(self.point_cloud_files) == len(
-            self.label_files), f"Size mismatch between point cloud files " \
-                               f"{len(self.point_cloud_files)} and labels {len(self.label_files)}"
+        # assert len(self.point_cloud_files) == len(
+        #     self.label_files), f"Size mismatch between point cloud files " \
+        #                        f"{len(self.point_cloud_files)} and labels {len(self.label_files)}"
 
-        self.label_map = {'Car': 0, ' Van': 1, 'Truck': 2, 'Pedestrian': 3, 'Person_sitting': 4, 'Cyclist': 5,
-                          'Tram': 6}
+        self.label_map = {'Car': 0, ' PEDESTRIAN': 1, 'CYCLIST': 2, 'SIGN': 3}
         self.label_colors = [
             [1, 0, 0],  # Red
             [0, 1, 0],  # Green
             [0, 0, 1],  # Blue
-            [1, 1, 0],  # Yellow
-            [1, 0, 1],  # Magenta
-            [0, 1, 1],  # Cyan
-            [0.5, 0.5, 0]  # Olive
+            [1, 1, 0]  # Yellow
         ]
 
     def load_frame(self, index: Union[int, Path]) -> None:
@@ -59,8 +55,8 @@ class KITTIDataset(Dataset):
 
         with open(point_cloud_file.resolve(), 'rb') as f:
             data = f.read()
-            assert len(data) % 4 == 0
-            point_cloud = np.frombuffer(data, dtype=np.float32).reshape((-1, 4))
+            assert len(data) % 6 == 0
+            point_cloud = rotate_point_cloud(np.frombuffer(data, dtype=np.float32).reshape((-1, 6)), -np.pi / 3, axis='z')
         label_object_list = self.__read_label_file(label_file)
         rotation_matrix, transform_matrix = self.__read_calib_files(calib_file)
 
@@ -99,7 +95,7 @@ class KITTIDataset(Dataset):
             height, width, length, pos_x, pos_y, pos_z, rotation = tuple(prop for prop in properties[8:15])
             label_object_list.append(
                 LabelObject(float(pos_x), float(pos_y) - float(height) / 2, float(pos_z), float(length), float(height),
-                            float(width), float(rotation), label_class))
+                            float(width), float(rotation), label_class, rotation_setting='y'))
 
         return label_object_list
 
@@ -114,7 +110,7 @@ class KITTIDataset(Dataset):
         for line in data.split('\n'):
             if line.split(' ')[0] == "R0_rect:":
                 rotation_matrix = np.loadtxt(line.split(' ')[1:]).reshape((3, 3))
-            elif line.split(' ')[0] == "Tr_velo_to_cam:":
+            elif line.split(' ')[0] == "Tr_velo_to_cam_2:":
                 transform_matrix = np.loadtxt(line.split(' ')[1:]).reshape((3, 4))
 
         if rotation_matrix is None or transform_matrix is None:

@@ -7,11 +7,13 @@ from utils.math_utils import *
 class LabelObject(ABC):
 
     def __init__(self, pos_x: float, pos_y: float, pos_z: float, length: float, width: float, height: float,
-                 rotation: float, label: str):
+                 rotation: float, label: str, rotation_setting='z'):
         self._rotation_z: float = rotation
         self._label: str = label
         self._bbox: o3d.OrientedBoundingBox = o3d.OrientedBoundingBox(np.array([pos_x, pos_y, pos_z]),
-                                                                      rotation_y(rotation),
+                                                                      rotation_z(rotation)
+                                                                      if rotation_setting == 'z'
+                                                                      else rotation_y(rotation),
                                                                       np.array([length, width, height]))
 
     def transform(self, transformation_matrix: np.ndarray) -> None:

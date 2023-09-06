@@ -1,5 +1,7 @@
 import threading
 from pathlib import Path
+
+from dataset.NuScenes_dataset import NuScenesDataset
 from dataset.dataset import Dataset
 from dataset.KITTI_dataset import KITTIDataset
 from dataset.point_cloud_object import PointCloudObject
@@ -23,7 +25,7 @@ class DatasetCreator:
         if dataset == 'kitti':
             return KITTIDataset(input_path)
         elif dataset == 'nuscenes':
-            raise NotImplementedError
+            return NuScenesDataset(input_path)
         else:
             raise NotImplementedError
 
@@ -66,11 +68,13 @@ class DatasetCreator:
             json.dump(label, f)
             f.close()
         # np.save(str(self.output_path / 'point_clouds' / (filename + '.bin')), point_cloud_object.get_points())
-        # point_cloud_object.get_points().tofile(str(self.output_path / 'point_clouds' / (filename + '.bin')))
-        pcd = o3d.geometry.PointCloud()
-        points = point_cloud_object.get_points()
-        pcd.points = o3d.utility.Vector3dVector(points[:, :3])
-        o3d.io.write_point_cloud(str(self.output_path / 'point_clouds' / (filename + '.pcd')), pcd)
+        point_cloud_object.get_points().tofile(str(self.output_path / 'point_clouds' / (filename + '.bin')))
+
+        # pcd = o3d.geometry.PointCloud()
+        # points = point_cloud_object.get_points()
+        # pcd.points = o3d.utility.Vector3dVector(points[:, :3])
+        # o3d.io.write_point_cloud(str(self.output_path / 'point_clouds' / (filename + '.pcd')), pcd)
+
 
 def parse_arguments() -> tuple[str, str, str, int]:
     parser = argparse.ArgumentParser("Parsing arguments to init DatasetCreator")

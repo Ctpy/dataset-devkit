@@ -1,5 +1,7 @@
 from dataset.dataset import Dataset
 from dataset.KITTI_dataset import KITTIDataset
+from dataset.NuScenes_dataset import NuScenesDataset
+from dataset.Waymo_dataset import WaymoDataset
 import open3d as o3d
 
 
@@ -45,11 +47,11 @@ class DatasetVisualizer:
 
 
 if __name__ == '__main__':
-    kitti = KITTIDataset("D:\\Datasets\\KITTI")
-    kitti.load_frame(2)
-    print(kitti.get_objects())
-    dataset_visualizer = DatasetVisualizer(kitti)
+    waymo = WaymoDataset("E:\\kitti_format")
+    waymo.load_frame(1)
+    print(waymo.get_objects())
+    dataset_visualizer = DatasetVisualizer(waymo)
     # kitti.get_objects()[0].normalize()
     # rotation = kitti.get_objects()[0].get_label_object().get_rotation()
     # kitti.get_objects()[0].rotate(rotation, dim=2)
-    dataset_visualizer.visualize(with_label=False)
+    dataset_visualizer.visualize(with_label=True)

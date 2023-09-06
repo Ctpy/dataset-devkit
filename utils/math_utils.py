@@ -25,6 +25,36 @@ def rotation_z(rotation: float) -> np.ndarray:
     return rotation_matrix
 
 
+def rotate_point_cloud(points, theta, axis='z'):
+
+
+    if axis == 'x':
+        rotation_matrix = np.array([
+            [1, 0, 0],
+            [0, np.cos(theta), -np.sin(theta)],
+            [0, np.sin(theta), np.cos(theta)]
+        ])
+    elif axis == 'y':
+        rotation_matrix = np.array([
+            [np.cos(theta), 0, np.sin(theta)],
+            [0, 1, 0],
+            [-np.sin(theta), 0, np.cos(theta)]
+        ])
+    elif axis == 'z':
+        rotation_matrix = np.array([
+            [np.cos(theta), -np.sin(theta), 0],
+            [np.sin(theta), np.cos(theta), 0],
+            [0, 0, 1]
+        ])
+    else:
+        raise ValueError("Axis must be 'x', 'y', or 'z'")
+
+    rotated_points = points.copy()
+    rotated_points[:, :3] = np.dot(points[:, :3], rotation_matrix.T)
+
+    return rotated_points
+
+
 def get_transformation_matrix(translation: np.ndarray, rotation: np.ndarray) -> np.ndarray:
     # TODO: Add checks
     # Create a 4x4 identity matrix
