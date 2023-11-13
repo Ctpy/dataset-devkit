@@ -171,7 +171,8 @@ for gt_sample in tqdm(gt_samples):
                 if np.isclose(inference[j], npy_pcd[k, :3], atol=1e-4).all():
                     matching_indices.append(k)
                     break
-        # assert len(matching_indices) == min(inference.shape[0], npy_pcd.shape[0]), f"Matching indices length {len(matching_indices)}"
+
+        assert len(matching_indices) == min(inference.shape[0], npy_pcd.shape[0]), f"Matching indices length {len(matching_indices)}"
 
         # Label processing of gt and prediction
         if not os.path.exists(ROOT_DIR + f"\\data\\" + f"KITTI_test_sampled{mode}"):

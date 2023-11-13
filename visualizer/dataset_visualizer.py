@@ -51,7 +51,4 @@ if __name__ == '__main__':
     waymo.load_frame(1)
     print(waymo.get_objects())
     dataset_visualizer = DatasetVisualizer(waymo)
-    # kitti.get_objects()[0].normalize()
-    # rotation = kitti.get_objects()[0].get_label_object().get_rotation()
-    # kitti.get_objects()[0].rotate(rotation, dim=2)
     dataset_visualizer.visualize(with_label=True)
