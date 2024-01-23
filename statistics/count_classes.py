@@ -41,5 +41,5 @@ for sample in samples:
     num_samples += 1
 print(num_samples)
 print(num_classes)
-print(num_points_per_sample)
+print(num_points_per_sample/64)
 print(num_points_per_class)
